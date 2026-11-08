@@ -11,3 +11,4 @@ settings:
   android:
     namespace: com.salahoard.mustnotify
     applicationId: com.salahoard.mustnotify
+    signing: enabled

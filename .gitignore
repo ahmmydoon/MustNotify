@@ -11,8 +11,12 @@ captures
 xcuserdata
 .idea/
 
-# Raw API captures: never commit
+# Raw API captures
 /captures/
 *.har
 *.pcap
 *.pcapng
+
+keystore.properties
+*.keystore
+*.jks
