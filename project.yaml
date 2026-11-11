@@ -3,4 +3,3 @@ modules:
   - app/desktopApp
   - app/shared
   - core
-  - server
