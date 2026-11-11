@@ -7,6 +7,9 @@ dependencies:
   - $libs.ktor.client.okhttp
   - $kotlin.serialization.json
 
+test-dependencies:
+  - $kotlin.test.junit5
+
 settings:
   kotlin:
     serialization:

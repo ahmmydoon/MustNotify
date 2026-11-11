@@ -17,6 +17,9 @@ dependencies:
 dependencies@android:
   - $compose.uiTooling
 
+test-dependencies:
+  - $kotlin.test.junit5
+
 settings:
   compose:
     enabled: true
