@@ -1,3 +1,13 @@
 product:
   type: kmp/lib
   platforms: [ jvm, android ]
+
+dependencies:
+  - $libs.ktor.client.core
+  - $libs.ktor.client.okhttp
+  - $kotlin.serialization.json
+
+settings:
+  kotlin:
+    serialization:
+      enabled: true
