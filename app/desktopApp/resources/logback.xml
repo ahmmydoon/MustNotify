@@ -1,10 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Privacy: keep this at WARN. Request URLs contain the inverter's pn and sn (they act as its password), and
+  debug logging of the HTTP stack would print them. Never add a file appender that records requests.
+-->
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss} %-5level %logger{20} - %msg%n</pattern>
         </encoder>
     </appender>
-    <root level="INFO">
+
+    <logger name="io.ktor" level="WARN"/>
+    <logger name="okhttp3" level="WARN"/>
+    <logger name="com.salahoard.mustnotify" level="INFO"/>
+
+    <root level="WARN">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

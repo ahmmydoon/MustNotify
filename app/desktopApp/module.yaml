@@ -6,6 +6,7 @@ dependencies:
   - $compose.preview
   - $libs.kotlinx.coroutines.swing
   - $libs.logback.classic
+  - //core
 
 settings:
   compose: enabled
