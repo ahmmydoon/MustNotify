@@ -6,9 +6,10 @@ dependencies:
   - $libs.ktor.client.core
   - $libs.ktor.client.okhttp
   - $kotlin.serialization.json
+  - $libs.kotlinx.coroutines.core
 
 test-dependencies:
-  - $kotlin.test.junit5
+  - $kotlin.test.junit
 
 settings:
   kotlin:
