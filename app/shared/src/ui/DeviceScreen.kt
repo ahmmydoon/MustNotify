@@ -124,13 +124,15 @@ private fun MonitoringCard(monitoring: Boolean, status: DeviceStatus?, onChange:
 private fun statusLine(status: DeviceStatus?): String? {
     if (status == null) return null
     val readings = status.readings
+    // A local val can be smart-cast; `readings.ageSeconds` can't (it is a property of a class from another module).
+    val ageMinutes = readings?.ageSeconds?.let { it / 60 }
     return when {
         status.failure == FailureReason.NETWORK -> "No internet connection: values marked ? are the last known ones."
         status.failure == FailureReason.AUTH_REQUIRED -> "The server asks for a login. Sign in again from the inverter list."
         status.failure != null -> "Couldn't read the inverter right now: values marked ? are the last known ones."
         readings == null -> null
-        readings.stale -> "Outdated: no new data for ${(readings.ageSeconds ?: 0) / 60} minutes. Thresholds are paused."
-        readings.ageSeconds != null -> "Last data from the inverter: ${readings.ageSeconds!! / 60} min ago (when checked)."
+        readings.stale -> "Outdated: no new data for ${ageMinutes ?: 0} minutes. Thresholds are paused."
+        ageMinutes != null -> "Last data from the inverter: $ageMinutes min ago (when checked)."
         else -> null
     }
 }
