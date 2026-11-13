@@ -135,6 +135,14 @@ class PollEngineTest {
         assertEquals(1, engine.pollOnce("SN").alerts.size)
     }
 
+    @Test fun readingsCarryEnergyUsedSinceTheBaseline() = runBlocking<Unit> {
+        val source = FakeSource(ApiResult.Ok(snap(pv = 0.0, counter = 7.0)))
+        val engine = engine(source, InMemorySettingsStore(appWith()))
+        assertEquals(0.0, (engine.pollOnce("SN") as PollOutcome.Success).readings.usedSinceBaselineKWh!!, 1e-9)
+        source.next = ApiResult.Ok(snap(pv = 0.0, counter = 7.4))
+        assertEquals(0.4, (engine.pollOnce("SN") as PollOutcome.Success).readings.usedSinceBaselineKWh!!, 1e-9)
+    }
+
     @Test fun pollRemembersRatedPower() = runBlocking<Unit> {
         val store = InMemorySettingsStore(appWith())
         engine(FakeSource(ApiResult.Ok(snap())), store).pollOnce("SN")

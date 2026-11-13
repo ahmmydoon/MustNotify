@@ -53,7 +53,7 @@ import com.salahoard.mustnotify.poll.LiveReadings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DeviceScreen(state: DeviceUiState, actions: DeviceActions, onBack: () -> Unit) {
+fun DeviceScreen(state: DeviceUiState, actions: DeviceActions, background: BackgroundAccess?, onBack: () -> Unit) {
     val device = state.device
     Scaffold(
         topBar = {
@@ -84,7 +84,7 @@ fun DeviceScreen(state: DeviceUiState, actions: DeviceActions, onBack: () -> Uni
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            MonitoringCard(device.monitoring, state.status, actions::setMonitoring)
+            MonitoringCard(device.monitoring, state.status, background, actions::setMonitoring)
 
             RangeCard(spec(ParamId.BATTERY_VOLTAGE), device.rules.rangeFor(spec(ParamId.BATTERY_VOLTAGE)), liveValue(readings?.batteryVoltage, spec(ParamId.BATTERY_VOLTAGE), uncertain), actions)
             RangeCard(spec(ParamId.BATTERY_CURRENT), device.rules.rangeFor(spec(ParamId.BATTERY_CURRENT)), liveValue(readings?.batteryCurrentA, spec(ParamId.BATTERY_CURRENT), uncertain), actions)
@@ -99,7 +99,7 @@ private fun liveValue(value: Double?, spec: ParamSpec, uncertain: Boolean): Stri
     if (value == null) "Now: –" else "Now: ${formatNumber(value, spec.decimals)} ${spec.unit}${if (uncertain) " ?" else ""}"
 
 @Composable
-private fun MonitoringCard(monitoring: Boolean, status: DeviceStatus?, onChange: (Boolean) -> Unit) {
+private fun MonitoringCard(monitoring: Boolean, status: DeviceStatus?, background: BackgroundAccess?, onChange: (Boolean) -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -116,6 +116,15 @@ private fun MonitoringCard(monitoring: Boolean, status: DeviceStatus?, onChange:
             statusLine(status)?.let {
                 Spacer(Modifier.height(8.dp))
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (monitoring && background != null && background.isRestricted()) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "While the screen is off and the phone is idle, Android can pause the checks, so values may show a ? " +
+                        "for a long time. Choose \"Don't optimize\" (or \"Unrestricted\") for this app for reliable overnight monitoring.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                TextButton(onClick = background::openSettings) { Text("Open battery settings") }
             }
         }
     }

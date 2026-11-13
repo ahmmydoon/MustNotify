@@ -22,6 +22,8 @@ data class LiveReadings(
     val ageSeconds: Long?,
     /** True when the newest reading is too old to trust; rules are not evaluated then. */
     val stale: Boolean,
+    /** Battery energy drawn since the last sunset (counter minus baseline). Only known after a monitored poll. */
+    val usedSinceBaselineKWh: Double? = null,
 )
 
 enum class FailureReason { NETWORK, AUTH_REQUIRED, SERVER, BAD_RESPONSE, UNKNOWN }
