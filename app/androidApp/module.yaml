@@ -10,7 +10,7 @@ settings:
   compose: enabled
   android:
     versionCode: 1
-    versionName: $libs.app-version.get()
+    versionName: 0.1.0-alpha1
     namespace: com.salahoard.mustnotify
     applicationId: com.salahoard.mustnotify
     signing: enabled
