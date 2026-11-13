@@ -1,0 +1,54 @@
+name: 💡 Feature request
+description: Suggest an idea — a new threshold type, a new platform, a nicer way to configure something…
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas are welcome! Before opening a request, it helps to know what you are trying to achieve rather than
+        only the exact feature you imagine — there may be several ways to get you there.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your request related to a problem?
+      description: Describe the problem or limitation you are hitting, in your own words.
+      placeholder: "Example: I get an alert when battery voltage drops once, but then I never know when it recovered without reopening the app."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like MustNotify to do?
+      description: Describe the outcome you want. Mock-ups or sketches are welcome.
+      placeholder: "Example: a follow-up 'back in range' alert for parameters that alert on exit."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of change is this?
+      options:
+        - New threshold / alert type
+        - Change to existing alerts or sliders
+        - User interface improvement
+        - New platform (iOS, wearable, widget, …)
+        - Infrastructure / build / docs
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      options:
+        - label: I checked the existing open and closed issues for something similar.
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Your setup (inverter model, how you use it), why this matters to you, anything else that helps prioritize.

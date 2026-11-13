@@ -1,0 +1,110 @@
+name: 🐛 Bug report
+description: Something is broken — an alert didn't fire, the app crashed, data is wrong…
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+
+        ⚠️ **Privacy first:** never paste your password, login token, device serial number (SN/PN) or devaddr
+        into an issue — not even in logs. Replace them with `***` before submitting. Logs from this app are
+        written at WARN level and should not contain credentials, but double-check anything you attach.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug, including what you expected to happen instead.
+      placeholder: "Example: I set battery voltage to alert when it drops below 14.6 V. The live notification showed 14.3 V for 20 minutes, but no alert was posted."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps starting from opening the app. If it happened only once, say so.
+      placeholder: |
+        1. Open the inverter screen
+        2. Enable monitoring
+        3. Set battery voltage range 14.6–15.0 V, mode "Leaves range"
+        4. Wait / unplug the load…
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Android
+        - Desktop (Windows)
+        - Desktop (macOS)
+        - Desktop (Linux)
+    validations:
+      required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Shown in the Android system app info, or run `./kotlin build` and check `libs.versions.toml`.
+      placeholder: "0.1.0-alpha1"
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS / Android version
+      description: "For Android: Settings → About phone → Android version. For desktop: OS and JDK vendor/version."
+      placeholder: "Android 14 / Windows 11, JDK 21"
+
+  - type: input
+    id: inverter-model
+    attributes:
+      label: Inverter model
+      description: Model name only — do not include the serial number.
+      placeholder: "MUST PV1800"
+
+  - type: checkboxes
+    id: network
+    attributes:
+      label: Environment checks
+      description: Tick what applies — this rules out the most common external causes.
+      options:
+        - label: The device had a working internet connection at the time.
+        - label: The vendor's own app showed up-to-date data for the inverter at the time.
+        - label: (Android) I was asked to, and did, disable battery optimization for MustNotify.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area does this affect?
+      options:
+        - Login / account
+        - Device list
+        - Threshold rules (sliders)
+        - Notifications / alerts
+        - Live status notification
+        - Background polling (Android service)
+        - Desktop app
+        - Other / unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Attach logcat output (Android: `adb logcat --pid=$(adb shell pidof -s com.salahoard.mustnotify)`) or desktop
+        console output taken around the time of the bug. Redact anything that looks like an identifier first.
+      render: shell
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots (crop out device names), frequency of the bug, whether a reinstall changed anything.
