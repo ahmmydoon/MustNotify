@@ -14,6 +14,7 @@ import com.salahoard.mustnotify.domain.RangeState
 import com.salahoard.mustnotify.domain.evaluateDischarge
 import com.salahoard.mustnotify.domain.evaluateRange
 import com.salahoard.mustnotify.domain.isStale
+import com.salahoard.mustnotify.domain.usedSinceBaselineKWh
 import kotlinx.coroutines.flow.first
 
 sealed interface PollOutcome {
@@ -52,7 +53,7 @@ class PollEngine(
         val snapshot = (result as? ApiResult.Ok)?.value ?: return PollOutcome.Failed(failureOf(result))
 
         val now = nowEpochSeconds()
-        val readings = toReadings(snapshot, device, now)
+        var readings = toReadings(snapshot, device, now)
         val evalTime = readings.epochSeconds ?: now // timers follow the data's clock, so a repeated stale reply can't advance them
         val ratedPower = snapshot.ratedPowerW ?: entry.ratedPowerW
 
@@ -92,6 +93,7 @@ class PollEngine(
             if (counter != null && pv != null) {
                 val (next, alert) = evaluateDischarge(entry.rules.discharge, runtime.discharge, counter, pv, evalTime)
                 runtime = runtime.copy(discharge = next)
+                readings = readings.copy(usedSinceBaselineKWh = usedSinceBaselineKWh(next, counter))
                 if (alert != null) alerts += alert
             }
         }

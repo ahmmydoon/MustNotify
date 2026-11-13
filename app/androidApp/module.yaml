@@ -7,6 +7,9 @@ dependencies:
   - $compose.uiTooling
   - //core
 
+test-dependencies:
+  - $kotlin.test.junit
+
 settings:
   compose: enabled
   android:
