@@ -15,4 +15,6 @@ class AppDependencies(
     val icons: IconRepository,
     val engine: PollEngine,
     val hub: LiveHub,
+    /** Null on platforms that need no special background permission (desktop). */
+    val background: BackgroundAccess? = null,
 )
