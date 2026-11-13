@@ -1,5 +1,4 @@
 product: android/app
-
 dependencies:
   - //app/shared
   - $libs.androidx.activity.compose
@@ -10,6 +9,8 @@ dependencies:
 settings:
   compose: enabled
   android:
+    versionCode: 1
+    versionName: $libs.app-version.get()
     namespace: com.salahoard.mustnotify
     applicationId: com.salahoard.mustnotify
     signing: enabled
