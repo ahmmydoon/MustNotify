@@ -47,6 +47,26 @@ The vendor cloud protocol was reverse-engineered from observed traffic of the ve
 | **Desktop (Windows / macOS / Linux)** | ✖ Alerts not implemented yet, WIP UI | Same Compose UI and alert engine; runs in a window and must stay open. (would appreaciate PRs especially for distribution)|
 | iOS | ✖ Not planned | Background polling is not reliable on iOS without push infrastructure. |
 
+## Roadmap
+
+- [x] Observe traffic of vendor app
+- [x] Implement logic and UI
+- [x] Implement android alerts and live notifications
+- [x] Release first `Alpha` build
+- [x] Implement android home-screen widget
+- [x] Design and replace app icon
+- [ ] Device-screen polish: back-arrow icon, tappable parameter cards, clearer monitoring label
+- [ ] Hint text: one consistent "rises above / drops below" style everywhere; discharge hint expressed in kWh and Wh
+- [ ] Color-coded live values on screen (freshness of "X min ago", themed "Now: …" values)
+- [ ] In-app battery-optimization prompt on Android, instead of sending the user to Settings
+- [ ] Separate notification channel for the persistent status notification, so it never mixes with alerts
+- [ ] Color-coded values in the status notification (battery voltage, current, solar, load, drawn energy)
+- [ ] Desktop: refresh readings right after login and device pick, without re-entering the app
+- [ ] Desktop: system notifications plus tray/status-bar live monitoring
+- [ ] Native packages: executables for Linux (Arch, Ubuntu) and Windows
+- [ ] Sign-in and add inverters from multiple accounts into a single list (maintenance-technician friendly)
+- [ ] Export-logs button with sensitive data (PN, SN, token, …) obfuscated
+
 ## Building from source
 
 The project uses the **[Kotlin Toolchain](https://kotlin-toolchain.org/dev/)** (Amper-style `module.yaml`/`project.yaml` instead of Gradle). The `kotlin` / `kotlin.bat` scripts in the repository root are self-bootstrapping: on first use they download the pinned toolchain, so no separate install is required.
