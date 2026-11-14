@@ -13,6 +13,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.salahoard.mustnotify.data.MonitoredDevice
 import com.salahoard.mustnotify.domain.DISCHARGE_MAX_BUDGET_KWH
@@ -53,7 +56,7 @@ import com.salahoard.mustnotify.poll.LiveReadings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DeviceScreen(state: DeviceUiState, actions: DeviceActions, background: BackgroundAccess?, onBack: () -> Unit) {
+fun DeviceScreen(state: DeviceUiState, actions: DeviceActions, background: BackgroundAccess?, widgets: WidgetAccess?, onBack: () -> Unit) {
     val device = state.device
     Scaffold(
         topBar = {
@@ -84,7 +87,7 @@ fun DeviceScreen(state: DeviceUiState, actions: DeviceActions, background: Backg
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            MonitoringCard(device.monitoring, state.status, background, actions::setMonitoring)
+            MonitoringCard(device.ref.sn, device.monitoring, device.showNotification, state.status, background, widgets, actions)
 
             RangeCard(spec(ParamId.BATTERY_VOLTAGE), device.rules.rangeFor(spec(ParamId.BATTERY_VOLTAGE)), liveValue(readings?.batteryVoltage, spec(ParamId.BATTERY_VOLTAGE), uncertain), actions)
             RangeCard(spec(ParamId.BATTERY_CURRENT), device.rules.rangeFor(spec(ParamId.BATTERY_CURRENT)), liveValue(readings?.batteryCurrentA, spec(ParamId.BATTERY_CURRENT), uncertain), actions)
@@ -99,7 +102,16 @@ private fun liveValue(value: Double?, spec: ParamSpec, uncertain: Boolean): Stri
     if (value == null) "Now: –" else "Now: ${formatNumber(value, spec.decimals)} ${spec.unit}${if (uncertain) " ?" else ""}"
 
 @Composable
-private fun MonitoringCard(monitoring: Boolean, status: DeviceStatus?, background: BackgroundAccess?, onChange: (Boolean) -> Unit) {
+private fun MonitoringCard(
+    sn: String,
+    monitoring: Boolean,
+    showNotification: Boolean,
+    status: DeviceStatus?,
+    background: BackgroundAccess?,
+    widgets: WidgetAccess?,
+    actions: DeviceActions,
+) {
+    var widgetHint by remember { mutableStateOf<String?>(null) }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -111,8 +123,40 @@ private fun MonitoringCard(monitoring: Boolean, status: DeviceStatus?, backgroun
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Switch(checked = monitoring, onCheckedChange = onChange)
+                Switch(checked = monitoring, onCheckedChange = actions::setMonitoring)
             }
+
+            // Two ways to keep the values in view. The notification button is filled while the notification is on.
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (showNotification) {
+                    FilledTonalButton(onClick = { actions.setShowNotification(false) }, enabled = monitoring, modifier = Modifier.weight(1f)) {
+                        Text("Notification widget", textAlign = TextAlign.Center)
+                    }
+                } else {
+                    OutlinedButton(onClick = { actions.setShowNotification(true) }, enabled = monitoring, modifier = Modifier.weight(1f)) {
+                        Text("Notification widget", textAlign = TextAlign.Center)
+                    }
+                }
+                if (widgets != null) {
+                    OutlinedButton(
+                        onClick = {
+                            widgetHint = if (widgets.requestPin(sn)) null else
+                                "Your launcher can't add it from here. Long-press the home screen, choose Widgets, then " +
+                                    "\"Inverter status\" from Must Notify (within 2 minutes, so it shows this inverter)."
+                        },
+                        enabled = monitoring,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Home-screen widget", textAlign = TextAlign.Center)
+                    }
+                }
+            }
+            widgetHint?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
             statusLine(status)?.let {
                 Spacer(Modifier.height(8.dp))
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

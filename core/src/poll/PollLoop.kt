@@ -31,12 +31,13 @@ class PollLoop(
     suspend fun run(): Nothing {
         var previous = emptySet<String>()
         settings.data
-            .map { data -> data.devices.filter { it.monitoring }.map { it.ref.sn }.toSet() }
+            // Keyed by (inverter -> show notification?), so flipping that switch restarts the loop and applies at once.
+            .map { data -> data.devices.filter { it.monitoring }.associate { it.ref.sn to it.showNotification } }
             .distinctUntilChanged()
             .collectLatest { current ->
-                (previous - current).forEach { sn -> notifier.clear(sn) }
-                previous = current
-                coroutineScope { current.forEach { sn -> launch { runDevice(sn) } } }
+                (previous - current.keys).forEach { sn -> notifier.clear(sn) }
+                previous = current.keys
+                coroutineScope { current.keys.forEach { sn -> launch { runDevice(sn) } } }
             }
         error("settings flow ended unexpectedly")
     }
@@ -46,7 +47,9 @@ class PollLoop(
         var lastKnown: LiveReadings? = null
         while (true) {
             val outcome = pollSafely(sn)
-            val device = settings.data.first().device(sn)?.ref ?: return
+            val entry = settings.data.first().device(sn) ?: return
+            val device = entry.ref
+            val persistent = entry.showNotification
             when (outcome) {
                 is PollOutcome.NoDevice -> return
                 is PollOutcome.Success -> {
@@ -54,7 +57,7 @@ class PollLoop(
                     lastKnown = outcome.readings
                     val status = DeviceStatus(sn, outcome.readings, uncertain = false, failure = null)
                     hub.put(status)
-                    notifier.showStatus(device, status)
+                    notifier.showStatus(device, status, persistent)
                     outcome.alerts.forEach { notifier.showAlert(device, it) }
                     pause(PollSchedule.delayAfterSuccessSeconds(outcome.readings.ageSeconds) * 1000)
                 }
@@ -62,7 +65,7 @@ class PollLoop(
                     failures++
                     val status = DeviceStatus(sn, lastKnown, uncertain = true, failure = outcome.reason)
                     hub.put(status)
-                    notifier.showStatus(device, status)
+                    notifier.showStatus(device, status, persistent)
                     pause(PollSchedule.delayAfterFailureSeconds(failures) * 1000)
                 }
             }

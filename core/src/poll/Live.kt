@@ -49,12 +49,15 @@ class LiveHub {
 
 /** Implemented per platform: Android notifications, desktop tray/popups. One persistent entry per monitored inverter. */
 interface Notifier {
-    /** Create or refresh the persistent notification of one inverter. */
-    fun showStatus(device: DeviceRef, status: DeviceStatus)
+    /**
+     * New values for one monitored inverter. Update its widgets always; show or refresh its persistent notification
+     * only when [persistent] is true, and remove it when it is false (the user switched it off).
+     */
+    fun showStatus(device: DeviceRef, status: DeviceStatus, persistent: Boolean)
 
     /** A threshold alert; a separate, dismissible notification. */
     fun showAlert(device: DeviceRef, alert: Alert)
 
-    /** Monitoring was switched off for this inverter: remove its persistent notification. */
+    /** Monitoring was switched off for this inverter: remove its persistent notification and blank its widgets. */
     fun clear(sn: String)
 }

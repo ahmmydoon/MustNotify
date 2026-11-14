@@ -24,9 +24,13 @@ import kotlin.test.assertTrue
 
 private class RecordingNotifier : Notifier {
     val statuses = mutableListOf<Pair<String, DeviceStatus>>()
+    val persistentFlags = mutableListOf<Boolean>()
     val alerts = mutableListOf<Pair<String, Alert>>()
     val cleared = mutableListOf<String>()
-    override fun showStatus(device: DeviceRef, status: DeviceStatus) { statuses += device.sn to status }
+    override fun showStatus(device: DeviceRef, status: DeviceStatus, persistent: Boolean) {
+        statuses += device.sn to status
+        persistentFlags += persistent
+    }
     override fun showAlert(device: DeviceRef, alert: Alert) { alerts += device.sn to alert }
     override fun clear(sn: String) { cleared += sn }
 }
@@ -98,5 +102,19 @@ class PollLoopTest {
         waitUntil { notifier.cleared.isNotEmpty() }
         job.cancelAndJoin()
         assertEquals(listOf("SN"), notifier.cleared)
+    }
+
+    @Test fun switchingThePersistentNotificationOffAppliesImmediately() = runBlocking<Unit> {
+        val store = InMemorySettingsStore(appWith())
+        val notifier = RecordingNotifier()
+        val pauses = mutableListOf<Long>()
+        val loop = PollLoop(engine(FakeSource(ApiResult.Ok(snap())), store), store, notifier, LiveHub(), pause = { ms -> pauses += ms; awaitCancellation() })
+        val job = launch { loop.run() }
+        waitUntil { pauses.size == 1 }
+        store.update { it.updateDevice("SN") { d -> d.copy(showNotification = false) } }
+        waitUntil { notifier.persistentFlags.size == 2 }
+        job.cancelAndJoin()
+        assertEquals(listOf(true, false), notifier.persistentFlags)  // re-polled right away, now without the notification
+        assertTrue(notifier.cleared.isEmpty())                        // still monitored: only the notification goes, not the widgets
     }
 }

@@ -72,7 +72,7 @@ fun App(deps: AppDependencies) {
                     is Screen.Device -> {
                         val vm = viewModel(key = "device-${current.sn}") { DeviceViewModel(deps, current.sn) }
                         val state by vm.state.collectAsState()
-                        DeviceScreen(state = state, actions = vm, background = deps.background, onBack = { screen = Screen.Devices })
+                        DeviceScreen(state = state, actions = vm, background = deps.background, widgets = deps.widgets, onBack = { screen = Screen.Devices })
                     }
                 }
             }

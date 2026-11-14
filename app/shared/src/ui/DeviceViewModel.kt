@@ -22,6 +22,7 @@ data class DeviceUiState(
 /** Everything the device screen can change. Every call is saved immediately and applies from the next poll. */
 interface DeviceActions {
     fun setMonitoring(on: Boolean)
+    fun setShowNotification(on: Boolean)
     fun setRangeEnabled(spec: ParamSpec, on: Boolean)
     fun setRange(spec: ParamSpec, low: Double, high: Double)
     fun setMode(spec: ParamSpec, mode: RangeMode)
@@ -41,6 +42,8 @@ class DeviceViewModel(private val deps: AppDependencies, private val sn: String)
     }
 
     override fun setMonitoring(on: Boolean) = edit { it.copy(monitoring = on) }
+
+    override fun setShowNotification(on: Boolean) = edit { it.copy(showNotification = on) }
 
     override fun setRangeEnabled(spec: ParamSpec, on: Boolean) = editRange(spec) { it.copy(enabled = on) }
 

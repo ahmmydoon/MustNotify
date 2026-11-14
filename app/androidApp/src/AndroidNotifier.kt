@@ -20,16 +20,19 @@ import com.salahoard.mustnotify.poll.LiveReadings
 import com.salahoard.mustnotify.poll.Notifier
 
 /**
- * One persistent notification per monitored inverter, plus separate dismissible alert notifications.
+ * One persistent notification per monitored inverter (unless the user switched it off), separate dismissible alert
+ * notifications, and a refresh of that inverter's home-screen widgets after every poll.
  *
  * Android wants exactly one notification tied to the foreground service. That is the first inverter's; if it is
- * switched off, another inverter's notification takes over. Until the first poll finishes a small "Starting"
- * notification fills the role. Calls come from several coroutines, hence @Synchronized.
+ * switched off, another inverter's takes over. When no inverter shows a notification (all switched off, or the
+ * first poll hasn't finished) a minimal, silent "monitoring in the background" notification fills the role, because
+ * Android does not allow a foreground service without one. Calls come from several coroutines, hence @Synchronized.
  */
 class AndroidNotifier(private val service: Service) : Notifier {
     private val context: Context = service
     private val manager = context.getSystemService(NotificationManager::class.java)
     private val statusCache = LinkedHashMap<String, Notification>()
+    private val names = HashMap<String, String>()
     private var foregroundSn: String? = null
 
     init { createChannels() }
@@ -43,7 +46,13 @@ class AndroidNotifier(private val service: Service) : Notifier {
     }
 
     @Synchronized
-    override fun showStatus(device: DeviceRef, status: DeviceStatus) {
+    override fun showStatus(device: DeviceRef, status: DeviceStatus, persistent: Boolean) {
+        names[device.sn] = device.name
+        InverterWidgets.update(context, device, status)
+        if (!persistent) {
+            removePersistent(device.sn)
+            return
+        }
         val notification = buildStatus(device, status)
         statusCache[device.sn] = notification
         if (foregroundSn == null) promote(device.sn, notification) else manager.notify(statusId(device.sn), notification)
@@ -68,9 +77,28 @@ class AndroidNotifier(private val service: Service) : Notifier {
 
     @Synchronized
     override fun clear(sn: String) {
-        statusCache.remove(sn)
+        removePersistent(sn)
+        InverterWidgets.markOff(context, sn, names[sn] ?: "Inverter")
+        names.remove(sn)
+    }
+
+    /** Remove everything; the service calls this right before it stops. */
+    @Synchronized
+    fun shutdown() {
+        names.forEach { (sn, name) -> InverterWidgets.markOff(context, sn, name) }
+        statusCache.keys.forEach { manager.cancel(statusId(it)) }
+        statusCache.clear()
+        names.clear()
+        foregroundSn = null
+        manager.cancel(PLACEHOLDER_ID)
+        service.stopForeground(Service.STOP_FOREGROUND_REMOVE)
+    }
+
+    /** Takes one inverter's persistent notification away and, if it was the foreground one, hands that role on. */
+    private fun removePersistent(sn: String) {
+        val hadOne = statusCache.remove(sn) != null
         if (sn != foregroundSn) {
-            manager.cancel(statusId(sn))
+            if (hadOne) manager.cancel(statusId(sn))
             return
         }
         val next = statusCache.keys.firstOrNull()
@@ -78,19 +106,9 @@ class AndroidNotifier(private val service: Service) : Notifier {
             promote(next, statusCache.getValue(next))
         } else {
             foregroundSn = null
-            startForeground(PLACEHOLDER_ID, placeholder()) // others may still be starting; the service stops itself when none remain
+            startForeground(PLACEHOLDER_ID, placeholder()) // silent stand-in; the service stops itself when nothing is monitored
         }
         manager.cancel(statusId(sn))
-    }
-
-    /** Remove everything; the service calls this right before it stops. */
-    @Synchronized
-    fun shutdown() {
-        statusCache.keys.forEach { manager.cancel(statusId(it)) }
-        statusCache.clear()
-        foregroundSn = null
-        manager.cancel(PLACEHOLDER_ID)
-        service.stopForeground(Service.STOP_FOREGROUND_REMOVE)
     }
 
     private fun promote(sn: String, notification: Notification) {
@@ -131,19 +149,7 @@ class AndroidNotifier(private val service: Service) : Notifier {
 
     /** The one-row table: five columns, a small label above each value. A "?" marks values that may be outdated. */
     private fun statusRow(readings: LiveReadings?, uncertain: Boolean): RemoteViews =
-        RemoteViews(context.packageName, R.layout.notification_status).apply {
-            setTextViewText(R.id.value_voltage, cell(readings?.batteryVoltage, 1, "V", uncertain))
-            setTextViewText(R.id.value_current, cell(readings?.batteryCurrentA, 0, "A", uncertain))
-            // Energy drawn since sunset is more telling than the lifetime counter; fall back to the counter if unknown.
-            setTextViewText(R.id.value_drawn, cell(readings?.usedSinceBaselineKWh ?: readings?.dischargeTotalKWh, 1, "kWh", uncertain))
-            setTextViewText(R.id.value_solar, cell(readings?.pvPowerW, 0, "W", uncertain))
-            setTextViewText(R.id.value_load, cell(readings?.loadPowerW, 0, "W", uncertain))
-        }
-
-    private fun cell(value: Double?, decimals: Int, unit: String, uncertain: Boolean): String = when {
-        value == null -> if (uncertain) "?" else "–"
-        else -> "${formatNumber(value, decimals)} $unit${if (uncertain) " ?" else ""}"
-    }
+        RemoteViews(context.packageName, R.layout.notification_status).also { StatusCells.fill(it, readings, uncertain) }
 
     private fun summary(readings: LiveReadings?, uncertain: Boolean): String {
         if (readings == null) return "No data yet ?"
@@ -153,12 +159,13 @@ class AndroidNotifier(private val service: Service) : Notifier {
             "Load ${readings.loadPowerW?.let { formatNumber(it, 0) } ?: "–"} W$q"
     }
 
-    private fun placeholder(): Notification = NotificationCompat.Builder(context, STATUS_CHANNEL)
+    /** Minimal, silent: only there because Android requires a notification for a running foreground service. */
+    private fun placeholder(): Notification = NotificationCompat.Builder(context, BACKGROUND_CHANNEL)
         .setSmallIcon(R.drawable.ic_stat_inverter)
         .setContentTitle("Must Notify")
-        .setContentText("Checking your inverter…")
+        .setContentText("Monitoring your inverter in the background")
         .setOngoing(true)
-        .setPriority(NotificationCompat.PRIORITY_LOW)
+        .setPriority(NotificationCompat.PRIORITY_MIN)
         .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
         .setContentIntent(openApp())
         .build()
@@ -183,6 +190,12 @@ class AndroidNotifier(private val service: Service) : Notifier {
                 description = "When a value you set a threshold for leaves or enters its range"
             },
         )
+        manager.createNotificationChannel(
+            NotificationChannel(BACKGROUND_CHANNEL, "Background monitoring", NotificationManager.IMPORTANCE_MIN).apply {
+                description = "A minimal notification Android requires while monitoring runs and no inverter shows its own"
+                setShowBadge(false)
+            },
+        )
     }
 
     private fun statusId(sn: String): Int = "status:$sn".hashCode()
@@ -190,6 +203,7 @@ class AndroidNotifier(private val service: Service) : Notifier {
     private companion object {
         const val STATUS_CHANNEL = "status"
         const val ALERT_CHANNEL = "alerts"
+        const val BACKGROUND_CHANNEL = "background"
         const val PLACEHOLDER_ID = 1
     }
 }

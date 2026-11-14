@@ -29,6 +29,7 @@ object AppGraph {
             engine = PollEngine(cloud.api, settings, secrets, nowEpochSeconds = { System.currentTimeMillis() / 1000 }),
             hub = LiveHub(),
             background = AndroidBackgroundAccess(context),
+            widgets = AndroidWidgetAccess(context),
         )
     }
 }

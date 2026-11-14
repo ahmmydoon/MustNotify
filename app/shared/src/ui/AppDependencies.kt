@@ -17,4 +17,6 @@ class AppDependencies(
     val hub: LiveHub,
     /** Null on platforms that need no special background permission (desktop). */
     val background: BackgroundAccess? = null,
+    /** Null where home-screen widgets don't exist (desktop). */
+    val widgets: WidgetAccess? = null,
 )

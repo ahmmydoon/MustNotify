@@ -45,4 +45,8 @@ class AppDataTest {
         val later = first.pickDevice("B")
         assertEquals(listOf(true, false), later.devices.map { it.monitoring })
     }
+
+    @Test fun notificationIsOnByDefault() {
+        assertTrue(MonitoredDevice(ref("A")).showNotification)
+    }
 }

@@ -38,6 +38,8 @@ data class MonitoredDevice(
     val ref: DeviceRef,
     /** Persistent notification + alerts + background polling for this inverter. */
     val monitoring: Boolean = false,
+    /** Whether the always-visible notification is shown while monitoring. Alerts and widgets work either way. */
+    val showNotification: Boolean = true,
     /** Last known `rating_power`; it decides the range of the watt sliders even before the first poll. */
     val ratedPowerW: Double? = null,
     val rules: RuleSet = RuleSet(),
